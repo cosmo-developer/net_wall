@@ -15,6 +15,14 @@ namespace net_wall{
 	enum FWProfile {
 		__DOMAIN, __PUBLIC, __PRIVATE,__ALL
 	};
+	enum FWAction {
+		BLOCK,ALLOW,MAX
+	};
+	class permission_denied {
+	public:
+		char* what;
+		permission_denied(const char* what):what((char*)what){}
+	};
 
 	struct net_wall {};//implementation provided by platform
 
@@ -22,13 +30,14 @@ namespace net_wall{
 		void NET_WALL_API NET_WALL_CALL  Initialize(net_wall**,FWProfile);
 		void NET_WALL_API NET_WALL_CALL Cleanup(net_wall*);
 		bool NET_WALL_API NET_WALL_CALL IsEnabled(net_wall*);
-		void NET_WALL_API NET_WALL_CALL SetEnabled(net_wall*, bool);
+		void NET_WALL_API NET_WALL_CALL SetEnabled(net_wall*, bool)noexcept(false);
 		FWProfile NET_WALL_API NET_WALL_CALL GetProfile(net_wall*);
 
 #if WIN32 
 		bool NET_WALL_API NET_WALL_CALL IsBlockAllInboundTraffic(net_wall*);
-		void NET_WALL_API NET_WALL_CALL SetBlockAllInboundTraffic(net_wall*, bool);
-
+		void NET_WALL_API NET_WALL_CALL SetBlockAllInboundTraffic(net_wall*, bool)noexcept(false);
+		FWAction NET_WALL_API NET_WALL_CALL GetDefaultInboundAction(net_wall*);
+		void NET_WALL_API NET_WALL_CALL SetDefaultInboundAction(net_wall* wall_glob, FWAction action)noexcept(false);
 #endif
 	}
 }

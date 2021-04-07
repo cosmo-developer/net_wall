@@ -2,6 +2,7 @@
 #include <iostream>
 namespace net_wall{
 #if WIN32
+#define PERMISSION_ERROR_MSG "Admin permission not guranted/ Run In Admin mode"
 	struct net_wall_win32:net_wall {
 		FWProfile profile;
 		INetFwPolicy2* pNetFwPolicy2;
@@ -20,7 +21,30 @@ namespace net_wall{
 		default:
 			return NET_FW_PROFILE_TYPE2(-1);
 		}
-
+	}
+	static FWAction FWActionFromNETFWACTION(NET_FW_ACTION netFWAction) {
+		switch (netFWAction) {
+		case NET_FW_ACTION_ALLOW:
+			return FWAction::ALLOW;
+		case NET_FW_ACTION_BLOCK:
+			return FWAction::BLOCK;
+		case NET_FW_ACTION_MAX:
+			return FWAction::MAX;
+		default:
+			return FWAction(-1);
+		}
+	}
+	static NET_FW_ACTION NETFWACTIONFromFWAction(FWAction action) {
+		switch (action) {
+		case ALLOW:
+			return NET_FW_ACTION_ALLOW;
+		case BLOCK:
+			return NET_FW_ACTION_BLOCK;
+		case MAX:
+			return NET_FW_ACTION_MAX;
+		default:
+			return NET_FW_ACTION(-1);
+		}
 	}
 	extern "C" {
 
@@ -58,6 +82,7 @@ namespace net_wall{
 				wall->hrComInit = S_FALSE;
 				CoUninitialize();
 			}
+			delete wall;
 		}
 
 		bool NET_WALL_API NET_WALL_CALL IsEnabled(net_wall* wall_glob) {
@@ -69,12 +94,13 @@ namespace net_wall{
 			return false;
 		}
 
-		void NET_WALL_API NET_WALL_CALL SetEnabled(net_wall* wall_glob, bool enabled) {
+		void NET_WALL_API NET_WALL_CALL SetEnabled(net_wall* wall_glob, bool enabled)noexcept(false) {
 			net_wall_win32* wall = (net_wall_win32*)wall_glob;
 			VARIANT_BOOL en = (enabled == true) ? -1 : 0;
 			if (SUCCEEDED(wall->pNetFwPolicy2->put_FirewallEnabled(NETFWPROFILETYPE2FromFWProfile(wall->profile), en))) {
 				return;
 			}
+			throw permission_denied(PERMISSION_ERROR_MSG);
 		}
 		FWProfile NET_WALL_API NET_WALL_CALL GetProfile(net_wall* wall_glob) {
 			net_wall_win32* wall = (net_wall_win32*)wall_glob;
@@ -89,11 +115,28 @@ namespace net_wall{
 			}
 			return false;
 		}
-		void NET_WALL_API NET_WALL_CALL SetBlockAllInboundTraffic(net_wall* wall_glob, bool enabled) {
+		void NET_WALL_API NET_WALL_CALL SetBlockAllInboundTraffic(net_wall* wall_glob, bool enabled)noexcept(false) {
 			net_wall_win32* wall = (net_wall_win32*)wall_glob;
 			if (SUCCEEDED(wall->pNetFwPolicy2->put_BlockAllInboundTraffic(NETFWPROFILETYPE2FromFWProfile(wall->profile), (enabled == true) ? -1 : 0))) {
 				return;
 			}
+			throw permission_denied(PERMISSION_ERROR_MSG);
+		}
+
+		FWAction NET_WALL_API NET_WALL_CALL GetDefaultInboundAction(net_wall* wall_glob) {
+			net_wall_win32* wall = (net_wall_win32*)wall_glob;
+			NET_FW_ACTION action;
+			if (SUCCEEDED(wall->pNetFwPolicy2->get_DefaultInboundAction(NETFWPROFILETYPE2FromFWProfile(wall->profile), &action))) {
+				return FWActionFromNETFWACTION(action);
+			}
+			return FWAction(-1);
+		}
+		void NET_WALL_API NET_WALL_CALL SetDefaultInboundAction(net_wall* wall_glob, FWAction action)noexcept(false) {
+			net_wall_win32* wall = (net_wall_win32*)wall_glob;
+			if (SUCCEEDED(wall->pNetFwPolicy2->put_DefaultInboundAction(NETFWPROFILETYPE2FromFWProfile(wall->profile), NETFWACTIONFromFWAction(action)))) {
+				return;
+			}
+			throw permission_denied(PERMISSION_ERROR_MSG);
 		}
 #endif
 	}

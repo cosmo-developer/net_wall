@@ -4,7 +4,7 @@
 
 int main()
 {
-    net_wall nwall;
+    net_wall::net_wall nwall;
 
     net_wall::Initialize(&nwall,FWProfile::__PUBLIC);
     std::cout << net_wall::IsEnabled(&nwall) << std::endl;

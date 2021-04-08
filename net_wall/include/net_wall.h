@@ -17,7 +17,10 @@ namespace net_wall{
 		__DOMAIN, __PUBLIC, __PRIVATE,__ALL
 	};
 	enum FWAction {
-		BLOCK,ALLOW,MAX
+		FWA_BLOCK,FWA_ALLOW,FWA_MAX
+	};
+	enum Bound {
+		B_INBOUND,B_OUTBOUND,B_MAX
 	};
 	struct net_wall {};//implementation provided by platform
 	struct net_wall_rule {};//implementation provided by platform
@@ -43,9 +46,13 @@ namespace net_wall{
 		FWAction NET_WALL_API NET_WALL_CALL GetDefaultOutboundAction(net_wall*);
 		void NET_WALL_API NET_WALL_CALL SetDefaultOutboundAction(net_wall*, FWAction)noexcept(false);
 		void NET_WALL_API NET_WALL_CALL GetRule(const char* name,net_wall*,net_wall_rule** out)noexcept(false);
+		void NET_WALL_API NET_WALL_CALL AddRule(net_wall*, net_wall_rule*)noexcept(false);
+		void NET_WALL_API NET_WALL_CALL RemoveRule(net_wall*, const char*)noexcept(false);
+		void NET_WALL_API NET_WALL_CALL EnableGroupedRule(const char*, net_wall*, bool)noexcept(false);
 		/** Rule Based Method********/
 		void NET_WALL_API NET_WALL_CALL InitializeRule(net_wall_rule**)noexcept(false);
 		void NET_WALL_API NET_WALL_CALL Cleanup(net_wall_rule* rl);
+
 #endif
 	}
 }

@@ -8,14 +8,14 @@ namespace net_wall {
 		FWProfile profile;
 		INetFwPolicy2* pNetFwPolicy2;
 		HRESULT hrComInit = S_FALSE;
-	};
+	};//net_wall_win32 provide windows firewall policy (for net_wall initialization)
 
 	struct net_wall_rule_win32 :public net_wall_rule {
 		INetFwRule* rule = NULL;
-	};
+	};//net_wall_rule_win32 uses windows firewall rule system
 	
 
-	static NET_FW_PROFILE_TYPE2 NETFWPROFILETYPE2FromFWProfile(FWProfile fw) {
+	static NET_FW_PROFILE_TYPE2 NETFWPROFILETYPE2FromFWProfile(FWProfile fw) {//net_wall FireWallProfile to windows firewall standard profile
 		switch (fw) {
 		case __DOMAIN:
 			return NET_FW_PROFILE2_DOMAIN;
@@ -29,7 +29,7 @@ namespace net_wall {
 			return NET_FW_PROFILE_TYPE2(-1);
 		}
 	}
-	static FWAction FWActionFromNETFWACTION(NET_FW_ACTION netFWAction) {
+	static FWAction FWActionFromNETFWACTION(NET_FW_ACTION netFWAction) {//windows firewall profile to net_wall profile
 		switch (netFWAction) {
 		case NET_FW_ACTION_ALLOW:
 			return FWAction::FWA_ALLOW;
@@ -80,6 +80,8 @@ namespace net_wall {
 
 		}
 	}
+
+
 
 	void NET_WALL_API NET_WALL_CALL  Initialize(net_wall** wall_all, FWProfile profile) {
 		HRESULT hr = S_OK;
@@ -140,6 +142,8 @@ namespace net_wall {
 		return wall->profile;
 	}
 #if WIN32 
+
+
 	bool NET_WALL_API NET_WALL_CALL IsBlockAllInboundTraffic(net_wall* wall_glob) {
 		net_wall_win32* wall = (net_wall_win32*)wall_glob;
 		VARIANT_BOOL enabled;
@@ -263,6 +267,59 @@ namespace net_wall {
 		throw permission_denied();
 	}
 
+	bool NET_WALL_API NET_WALL_CALL IsGroupEnabled(net_wall* wall_glob, const char* name) {
+		net_wall_win32* wall = (net_wall_win32*)wall_glob;
+		BSTR groupName = _com_util::ConvertStringToBSTR(name);
+		VARIANT_BOOL enabled = 0;
+		if (SUCCEEDED(wall->pNetFwPolicy2->IsRuleGroupEnabled(NETFWPROFILETYPE2FromFWProfile(wall->profile),groupName,&enabled))) {
+			SysFreeString(groupName);
+			return enabled == -1 ? true : false;
+		}
+		SysFreeString(groupName);
+		return false;
+	}
+
+	bool NET_WALL_API NET_WALL_CALL IsNotificationDisabled(net_wall* wall_glob) {
+		VARIANT_BOOL disabled =0;
+		net_wall_win32* wall = (net_wall_win32*)wall_glob;
+		if (SUCCEEDED(wall->pNetFwPolicy2->get_NotificationsDisabled(NETFWPROFILETYPE2FromFWProfile(wall->profile), &disabled))) {
+			return disabled == -1 ? true : false;
+		}
+		return false;
+	}
+	void NET_WALL_API NET_WALL_CALL SetNotificationDisabled(net_wall* wall_glob, bool disabled)noexcept(false) {
+		net_wall_win32* wall = (net_wall_win32*)wall_glob;
+		if (SUCCEEDED(wall->pNetFwPolicy2->put_NotificationsDisabled(NETFWPROFILETYPE2FromFWProfile(wall->profile), disabled == true ? -1 : 0))) {
+			return;
+		}
+		throw permission_denied();
+	}
+
+	bool NET_WALL_API NET_WALL_CALL IsUnicastResponsesToMulticastBroadcastDisabled(net_wall* wall_glob) {
+		net_wall_win32* wall = (net_wall_win32*)wall_glob;
+		VARIANT_BOOL disabled = 0;
+		if (SUCCEEDED(wall->pNetFwPolicy2->get_UnicastResponsesToMulticastBroadcastDisabled(NETFWPROFILETYPE2FromFWProfile(wall->profile), &disabled))) {
+			return disabled == -1 ? true : false;
+		}
+		return false;
+	}
+
+	void NET_WALL_API NET_WALL_CALL SetUnicastResponsesToMulticastBroadcastDisabled(net_wall* wall_glob, bool disabled)noexcept(false) {
+		net_wall_win32* wall = (net_wall_win32*)wall_glob;
+		if (SUCCEEDED(wall->pNetFwPolicy2->put_UnicastResponsesToMulticastBroadcastDisabled(NETFWPROFILETYPE2FromFWProfile(wall->profile),disabled==true?-1:0))) {
+			return;
+		}
+		throw permission_denied();
+	}
+
+	void NET_WALL_API NET_WALL_CALL RestoreDefaultSettings(net_wall* wall_glob)noexcept(false) {
+		net_wall_win32* wall = (net_wall_win32*)wall_glob;
+		if (SUCCEEDED(wall->pNetFwPolicy2->RestoreLocalFirewallDefaults())) {
+			return;
+		}
+		throw permission_denied();
+	}
+
 
 
 	/*** Rule Based Method**************/
@@ -286,6 +343,15 @@ namespace net_wall {
 			win32fwrule->rule = NULL;
 		}
 		delete win32fwrule;
+	}
+
+	void NET_WALL_API NET_WALL_CALL GroupOfRule(net_wall_rule* rule,char** out) {
+		BSTR ruleName;
+		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
+		if (SUCCEEDED(win32fwrule->rule->get_Grouping(&ruleName))) {
+			out[0]=_com_util::ConvertBSTRToString(ruleName);
+			SysFreeString(ruleName);
+		}
 	}
 #endif
 	

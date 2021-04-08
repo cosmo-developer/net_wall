@@ -1,5 +1,7 @@
 #include "net_wall.h"
 #include <iostream>
+#include <comutil.h>
+#pragma comment(lib,"comsuppw.lib")
 namespace net_wall {
 #if WIN32
 	struct net_wall_win32 :net_wall {
@@ -165,16 +167,24 @@ namespace net_wall {
 			net_wall_rule_win32* rule = new net_wall_rule_win32;
 			INetFwRules* rules;
 			if (SUCCEEDED(wall->pNetFwPolicy2->get_Rules(&rules))) {
-				BSTR bstrName = SysAllocString((BSTR)name);
+				BSTR bstrName = _com_util::ConvertStringToBSTR(name);
 				if (rules != NULL) {
-					rules->Item(bstrName, &rule->rule);
+					if (SUCCEEDED(rules->Item(bstrName, &rule->rule))) {
+						out[0] = rule;
+						rules->Release();
+						SysFreeString(bstrName);
+						return;
+					}
+					SysFreeString(bstrName);
+					delete rule;
+					out[0] = NULL;
+					return;
 				}
 				else {
 					delete rule;
 					out[0] = NULL;
+					return;
 				}
-				rules->Release();
-				out[0] = rule;
 			}
 			throw permission_denied();
 		}

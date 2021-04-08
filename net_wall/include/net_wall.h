@@ -1,5 +1,4 @@
 #pragma once
-#include <vector>
 #if WIN32
 #define NET_WALL_CALL __stdcall
 #ifdef NET_WALL_BUILD_MODE

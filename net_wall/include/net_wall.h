@@ -9,6 +9,7 @@
 #endif
 #include <Windows.h>
 #include <netfw.h>
+#include <netlistmgr.h>
 #pragma comment(lib,"ole32.lib")
 #endif
 #define PERMISSION_ERROR_MSG "Admin permission not guranted/ Run In Admin mode"
@@ -37,6 +38,9 @@ namespace net_wall{
 	};
 
 	extern "C++" {
+		bool NET_WALL_API NET_WALL_CALL Init();
+		void NET_WALL_API NET_WALL_CALL Free();
+
 		void NET_WALL_API NET_WALL_CALL  Initialize(net_wall**,FWProfile);
 		void NET_WALL_API NET_WALL_CALL Cleanup(net_wall*);
 		

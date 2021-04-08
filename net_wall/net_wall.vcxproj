@@ -143,9 +143,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\netmanager_win32.cpp" />
     <ClCompile Include="src\net_wall_win32.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\netmanager.h" />
     <ClInclude Include="include\net_wall.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

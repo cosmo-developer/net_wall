@@ -7,7 +7,6 @@ namespace net_wall {
 	struct net_wall_win32 :net_wall {
 		FWProfile profile;
 		INetFwPolicy2* pNetFwPolicy2;
-		HRESULT hrComInit = S_FALSE;
 	};//net_wall_win32 provide windows firewall policy (for net_wall initialization)
 
 	struct net_wall_rule_win32 :public net_wall_rule {
@@ -106,19 +105,27 @@ namespace net_wall {
 			return Protocol(-1);
 		}
 	}
+	bool NET_WALL_API NET_WALL_CALL Init() {
+		HRESULT hrComInit=S_FALSE;
+		hrComInit = CoInitializeEx(0, COINIT_MULTITHREADED);
+		if (hrComInit != RPC_E_CHANGED_MODE) {
+			if (FAILED(hrComInit)) {
+				std::cerr << "Platform/win32:CoInitializeEx failed:" << hrComInit << std::endl;
+				return false;
+			}
+		}
+		return true;
+	}
+
+	void NET_WALL_API NET_WALL_CALL Free() {
+		CoUninitialize();
+	}
 
 	void NET_WALL_API NET_WALL_CALL  Initialize(net_wall** wall_all, FWProfile profile) {
 		HRESULT hr = S_OK;
 		net_wall_win32* wall = new net_wall_win32;
 		wall->profile = profile;
 		wall_all[0] = wall;
-		wall->hrComInit = CoInitializeEx(0, COINIT_APARTMENTTHREADED);
-		if (wall->hrComInit != RPC_E_CHANGED_MODE) {
-			if (FAILED(wall->hrComInit)) {
-				std::cerr << "Platform/win32:CoInitializeEx failed:" << wall->hrComInit << std::endl;
-				Cleanup(wall);
-			}
-		}
 		hr = CoCreateInstance(
 			__uuidof(NetFwPolicy2),
 			NULL,
@@ -136,10 +143,6 @@ namespace net_wall {
 		if (wall->pNetFwPolicy2 != NULL) {
 			wall->pNetFwPolicy2->Release();
 			wall->pNetFwPolicy2 = NULL;
-		}
-		if (SUCCEEDED(wall->hrComInit)) {
-			wall->hrComInit = S_FALSE;
-			CoUninitialize();
 		}
 		delete wall;
 	}

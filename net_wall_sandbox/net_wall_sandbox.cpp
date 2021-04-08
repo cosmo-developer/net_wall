@@ -1,26 +1,22 @@
 
 #include <iostream>
-#include "net_wall.h"
-
+#include "netmanager.h"
 int main()
 {
-    net_wall::net_wall* nwall;
-    net_wall::net_wall_rule* myrule=NULL;
+    net_wall::net_list_manager* manager;
+    net_wall::net_wall* wall;
+    std::cout << (net_wall::Init()==true?"Success":"Oops")<<std::endl;
     try {
-        net_wall::Initialize(&nwall, net_wall::FWProfile::__PUBLIC);
-        std::cout << net_wall::IsEnabled(nwall) << std::endl;
-        //net_wall::SetEnabled(nwall, false);
-        std::cout << net_wall::IsEnabled(nwall) << std::endl;
-        std::cout << (net_wall::GetProfile(nwall) == net_wall::FWProfile::__PUBLIC) << std::endl;
-        std::cout << (net_wall::GetDefaultInboundAction(nwall)==net_wall::FWAction::FWA_BLOCK) << std::endl;
-        
-        //net_wall::RemoveRule(nwall,"Cosmo Group");
-        net_wall::RemoveRule(nwall, "Cosmo Group");
-        std::cout << (myrule == NULL) << std::endl;
-        net_wall::Cleanup(nwall);
+        net_wall::Initialize(&wall, net_wall::FWProfile::__PUBLIC);
+        net_wall::InitializeNetListManager(&manager);
+
+        net_wall::Cleanup(manager);
+        std::cout << net_wall::IsEnabled(wall) << std::endl;
+        net_wall::Cleanup(wall);
     }
     catch (net_wall::permission_denied& pm) {
         std::cerr << pm.what << std::endl;
     }
+    net_wall::Free();
     return 0;
 }

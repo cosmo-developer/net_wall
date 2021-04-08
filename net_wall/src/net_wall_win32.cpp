@@ -17,13 +17,13 @@ namespace net_wall {
 
 	static NET_FW_PROFILE_TYPE2 NETFWPROFILETYPE2FromFWProfile(FWProfile fw) {//net_wall FireWallProfile to windows firewall standard profile
 		switch (fw) {
-		case __DOMAIN:
+		case FWProfile::__DOMAIN:
 			return NET_FW_PROFILE2_DOMAIN;
-		case __PUBLIC:
+		case FWProfile::__PUBLIC:
 			return NET_FW_PROFILE2_PUBLIC;
-		case __PRIVATE:
+		case FWProfile::__PRIVATE:
 			return NET_FW_PROFILE2_PRIVATE;
-		case __ALL:
+		case FWProfile::__ALL:
 			return NET_FW_PROFILE2_ALL;
 		default:
 			return NET_FW_PROFILE_TYPE2(-1);
@@ -43,11 +43,11 @@ namespace net_wall {
 	}
 	static NET_FW_ACTION NETFWACTIONFromFWAction(FWAction action) {
 		switch (action) {
-		case FWA_ALLOW:
+		case FWAction::FWA_ALLOW:
 			return NET_FW_ACTION_ALLOW;
-		case FWA_BLOCK:
+		case FWAction::FWA_BLOCK:
 			return NET_FW_ACTION_BLOCK;
-		case FWA_MAX:
+		case FWAction::FWA_MAX:
 			return NET_FW_ACTION_MAX;
 		default:
 			return NET_FW_ACTION(-1);
@@ -56,11 +56,11 @@ namespace net_wall {
 
 	static NET_FW_RULE_DIRECTION NETFWRULEDIRECTIONFromBound(Bound bound) {
 		switch (bound) {
-		case B_INBOUND:
+		case Bound::B_INBOUND:
 			return NET_FW_RULE_DIRECTION::NET_FW_RULE_DIR_IN;
-		case B_OUTBOUND:
+		case Bound::B_OUTBOUND:
 			return NET_FW_RULE_DIRECTION::NET_FW_RULE_DIR_OUT;
-		case B_MAX:
+		case Bound::B_MAX:
 			return NET_FW_RULE_DIRECTION::NET_FW_RULE_DIR_MAX;
 		default:
 			return NET_FW_RULE_DIRECTION(-1);
@@ -81,7 +81,31 @@ namespace net_wall {
 		}
 	}
 
+	static NET_FW_IP_PROTOCOL NETFWIPPROTOCOLFromProtocol(Protocol protoCol) {
+		switch (protoCol) {
+		case Protocol::TCP:
+			return NET_FW_IP_PROTOCOL_TCP;
+		case Protocol::UDP:
+			return NET_FW_IP_PROTOCOL_UDP;
+		case Protocol::ANY:
+			return NET_FW_IP_PROTOCOL_ANY;
+		default:
+			return NET_FW_IP_PROTOCOL(-1);
+		}
+	}
 
+	static Protocol ProtocolFromNETFWIPPROTOCOL(NET_FW_IP_PROTOCOL netFwIPProtocol) {
+		switch (netFwIPProtocol) {
+		case NET_FW_IP_PROTOCOL_TCP:
+			return Protocol::TCP;
+		case NET_FW_IP_PROTOCOL_UDP:
+			return Protocol::UDP;
+		case NET_FW_IP_PROTOCOL_ANY:
+			return Protocol::ANY;
+		default:
+			return Protocol(-1);
+		}
+	}
 
 	void NET_WALL_API NET_WALL_CALL  Initialize(net_wall** wall_all, FWProfile profile) {
 		HRESULT hr = S_OK;
@@ -353,6 +377,101 @@ namespace net_wall {
 			SysFreeString(ruleName);
 		}
 	}
+
+	void NET_WALL_API NET_WALL_CALL GetName(net_wall_rule* rule, char** out) {
+		BSTR name;
+		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
+		if (SUCCEEDED(win32fwrule->rule->get_Name(&name))) {
+			out[0] = _com_util::ConvertBSTRToString(name);
+			SysFreeString(name);
+			return;
+		}
+	}													  
+	void NET_WALL_API NET_WALL_CALL SetName(net_wall_rule* rule, const char* name)noexcept(false) {
+		BSTR rulename=_com_util::ConvertStringToBSTR(name);
+		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
+		if (SUCCEEDED(win32fwrule->rule->put_Name(rulename))) {
+			SysFreeString(rulename);//In alpha mode
+			return;
+		}
+		throw permission_denied();
+	}
+
+	void NET_WALL_API NET_WALL_CALL GetDescription(net_wall_rule* rule, char** out) {
+		BSTR desc;
+		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
+		if (SUCCEEDED(win32fwrule->rule->get_Description(&desc))) {
+			out[0] = _com_util::ConvertBSTRToString(desc);
+			SysFreeString(desc);
+			return;
+		}
+	}
+	void NET_WALL_API NET_WALL_CALL SetDescription(net_wall_rule* rule, const char* desc)noexcept(false) {
+		BSTR _desc = _com_util::ConvertStringToBSTR(desc);
+		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
+		if (SUCCEEDED(win32fwrule->rule->put_Name(_desc))) {
+			SysFreeString(_desc);//In alpha mode
+			return;
+		}
+		throw permission_denied();
+	}
+
+	void NET_WALL_API NET_WALL_CALL GetApplicationName(net_wall_rule* rule, char** out) {
+		BSTR appname;
+		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
+		if (SUCCEEDED(win32fwrule->rule->get_ApplicationName(&appname))) {
+			out[0] = _com_util::ConvertBSTRToString(appname);
+			SysFreeString(appname);
+			return;
+		}
+	}
+	void NET_WALL_API NET_WALL_CALL SetApplicationName(net_wall_rule* rule, const char* name)noexcept(false) {
+		BSTR appname = _com_util::ConvertStringToBSTR(name);
+		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
+		if (SUCCEEDED(win32fwrule->rule->put_ApplicationName(appname))) {
+			SysFreeString(appname);//In alpha mode
+			return;
+		}
+		throw permission_denied();
+	}
+
+	void NET_WALL_API NET_WALL_CALL GetServiceName(net_wall_rule* rule, char** out) {
+		BSTR servicename;
+		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
+		if (SUCCEEDED(win32fwrule->rule->get_ApplicationName(&servicename))) {
+			out[0] = _com_util::ConvertBSTRToString(servicename);
+			SysFreeString(servicename);
+			return;
+		}
+	}
+	void NET_WALL_API NET_WALL_CALL SetServiceName(net_wall_rule* rule, const char* name)noexcept(false) {
+		BSTR serviceName = _com_util::ConvertStringToBSTR(name);
+		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
+		if (SUCCEEDED(win32fwrule->rule->put_ServiceName(serviceName))) {
+			SysFreeString(serviceName);//In alpha mode
+			return;
+		}
+		throw permission_denied();
+	}
+
+	Protocol NET_WALL_API NET_WALL_CALL GetProtocol(net_wall_rule* rule) {
+		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
+		LONG prot;
+		if (SUCCEEDED(win32fwrule->rule->get_Protocol(&prot))) {
+			return ProtocolFromNETFWIPPROTOCOL(NET_FW_IP_PROTOCOL(prot));
+		}
+		return Protocol(-1);
+	}
+	void NET_WALL_API NET_WALL_CALL SetProtocol(net_wall_rule* rule, Protocol prot)noexcept(false) {
+		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
+		NET_FW_IP_PROTOCOL protocol = NETFWIPPROTOCOLFromProtocol(prot);
+		if (SUCCEEDED(win32fwrule->rule->put_Protocol(LONG(protocol)))) {
+			return;
+		}
+		throw permission_denied();
+	}
+
+
 #endif
 	
 #endif // WIN32

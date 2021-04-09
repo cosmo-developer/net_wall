@@ -147,6 +147,11 @@
   <ItemGroup>
     <ClCompile Include="net_wall_sandbox.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\net_wall\net_wall.vcxproj">
+      <Project>{155c62cb-a7a4-4c56-821e-51b8cb8a7e00}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

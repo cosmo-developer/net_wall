@@ -377,7 +377,6 @@ namespace net_wall {
 		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
 		if (SUCCEEDED(win32fwrule->rule->get_Grouping(&ruleName))) {
 			out[0]=_com_util::ConvertBSTRToString(ruleName);
-			SysFreeString(ruleName);
 		}
 	}
 
@@ -386,7 +385,6 @@ namespace net_wall {
 		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
 		if (SUCCEEDED(win32fwrule->rule->get_Name(&name))) {
 			out[0] = _com_util::ConvertBSTRToString(name);
-			SysFreeString(name);
 			return;
 		}
 	}													  
@@ -405,7 +403,6 @@ namespace net_wall {
 		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
 		if (SUCCEEDED(win32fwrule->rule->get_Description(&desc))) {
 			out[0] = _com_util::ConvertBSTRToString(desc);
-			SysFreeString(desc);
 			return;
 		}
 	}
@@ -424,7 +421,6 @@ namespace net_wall {
 		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
 		if (SUCCEEDED(win32fwrule->rule->get_ApplicationName(&appname))) {
 			out[0] = _com_util::ConvertBSTRToString(appname);
-			SysFreeString(appname);
 			return;
 		}
 	}
@@ -443,7 +439,6 @@ namespace net_wall {
 		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
 		if (SUCCEEDED(win32fwrule->rule->get_ApplicationName(&servicename))) {
 			out[0] = _com_util::ConvertBSTRToString(servicename);
-			SysFreeString(servicename);
 			return;
 		}
 	}
@@ -473,7 +468,21 @@ namespace net_wall {
 		}
 		throw permission_denied();
 	}
-
+	Bound NET_WALL_API NET_WALL_CALL GetBound(net_wall_rule* rule) {
+		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
+		NET_FW_RULE_DIRECTION dir;
+		if (SUCCEEDED(win32fwrule->rule->get_Direction(&dir))) {
+			return BoundFromNETFWRULEDIRECTION(dir);
+		}
+		return Bound(-1);
+	}
+	void NET_WALL_API NET_WALL_CALL SetBound(net_wall_rule* rule, Bound bound)noexcept(false) {
+		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
+		if (SUCCEEDED(win32fwrule->rule->put_Direction(NETFWRULEDIRECTIONFromBound(bound)))) {
+			return;
+		}
+		throw permission_denied();
+	}
 
 #endif
 	

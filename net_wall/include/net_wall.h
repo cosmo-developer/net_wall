@@ -94,6 +94,10 @@ namespace net_wall{
 
 		Protocol NET_WALL_API NET_WALL_CALL GetProtocol(net_wall_rule*);
 		void NET_WALL_API NET_WALL_CALL SetProtocol(net_wall_rule*, Protocol)noexcept(false);
+
+		Bound NET_WALL_API NET_WALL_CALL GetBound(net_wall_rule*);
+		void NET_WALL_API NET_WALL_CALL SetBound(net_wall_rule*, Bound)noexcept(false);
+
 #endif
 	}
 }

@@ -19,7 +19,9 @@ namespace net_wall {
 		net_list_manager_win32* mgr = (net_list_manager_win32*)manager;
 		if (mgr->manager != NULL) {
 			mgr->manager->Release();
+			mgr->manager = NULL;
 			delete mgr;
 		}
 	}
+
 }

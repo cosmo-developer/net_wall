@@ -10,9 +10,47 @@ namespace net_wall {
 	};//net_wall_win32 provide windows firewall policy (for net_wall initialization)
 
 	struct net_wall_rule_win32 :public net_wall_rule {
+		FWProfile profiles;
 		INetFwRule* rule = NULL;
 	};//net_wall_rule_win32 uses windows firewall rule system
+
+	struct net_wall_service_restriction_win32 :public net_wall_service_restriction {
+		INetFwServiceRestriction* restriction=NULL;
+	};
 	
+	static LONG FWProfileMaskToNETFWPROFILE2MASK(FWProfile profilesTypeMask) {
+		LONG mask=0;
+		if (((profilesTypeMask << 7)>>7)==FWProfile::__DOMAIN) {
+			mask |= NET_FW_PROFILE2_DOMAIN;
+		}
+		if (((profilesTypeMask << 6) >> 7) == FWProfile::__PUBLIC) {
+			mask |= NET_FW_PROFILE2_PUBLIC;
+		}
+		if (((profilesTypeMask << 5) >> 7) == FWProfile::__PRIVATE) {
+			mask |= NET_FW_PROFILE2_PUBLIC;
+		}
+		if (profilesTypeMask == 0b111) {
+			mask = NET_FW_PROFILE2_ALL;
+		}
+		return mask;
+	}
+
+	static FWProfile NETFWPROFILE2MASKToFWProfile(LONG maskType) {
+		char mask = 0;
+		if (((maskType << 7) >> 7) == 0x1) {
+			mask |= char(FWProfile::__DOMAIN);
+		}
+		if (((maskType << 6) >> 7) == 0x2) {
+			mask |= char(FWProfile::__PUBLIC);
+		}
+		if (((maskType << 5) >> 7) == 0x4) {
+			mask |= char(FWProfile::__PRIVATE);
+		}
+		if (maskType == NET_FW_PROFILE2_ALL) {
+			mask = (char)FWProfile::__ALL;
+		}
+		return FWProfile(mask);
+	}
 
 	static NET_FW_PROFILE_TYPE2 NETFWPROFILETYPE2FromFWProfile(FWProfile fw) {//net_wall FireWallProfile to windows firewall standard profile
 		switch (fw) {
@@ -105,6 +143,34 @@ namespace net_wall {
 			return Protocol(-1);
 		}
 	}
+
+	static FWModifyState FWModifyStateFromNETFWMODIFYSTATE(NET_FW_MODIFY_STATE state) {
+		switch (state) {
+		case NET_FW_MODIFY_STATE_OK:
+			return OK;
+		case NET_FW_MODIFY_STATE_GP_OVERRIDE:
+			return GP_OVERRIDE;
+		case NET_FW_MODIFY_STATE_INBOUND_BLOCKED:
+			return IN_BLOCK;
+		default:
+			return FWModifyState(-1);
+		}
+	}
+
+	static NET_FW_MODIFY_STATE NETFWMODIFYSTATEFromFWModifyState(FWModifyState state) {
+		switch (state) {
+		case OK:
+			return NET_FW_MODIFY_STATE_OK;
+		case GP_OVERRIDE:
+			return NET_FW_MODIFY_STATE_GP_OVERRIDE;
+		case IN_BLOCK:
+			return NET_FW_MODIFY_STATE_INBOUND_BLOCKED;
+		default:
+			return NET_FW_MODIFY_STATE(-1);
+		}
+	}
+
+
 	bool NET_WALL_API NET_WALL_CALL Init() {
 		HRESULT hrComInit=S_FALSE;
 		hrComInit = CoInitializeEx(0, COINIT_MULTITHREADED);
@@ -347,6 +413,33 @@ namespace net_wall {
 		throw permission_denied();
 	}
 
+	FWModifyState NET_WALL_API NET_WALL_CALL LocalPolicyModifyState(net_wall* wall_glob) {
+		net_wall_win32* wall = (net_wall_win32*)wall_glob;
+		NET_FW_MODIFY_STATE state;
+		if (SUCCEEDED(wall->pNetFwPolicy2->get_LocalPolicyModifyState(&state))) {
+			return FWModifyStateFromNETFWMODIFYSTATE(state);
+		}
+		return FWModifyState(-1);
+	}
+
+	void NET_WALL_API NET_WALL_CALL GetServiceRestriction(net_wall* wall_glob, net_wall_service_restriction** out) {
+		net_wall_service_restriction_win32* sr = new net_wall_service_restriction_win32;
+		net_wall_win32* wall = (net_wall_win32*)wall_glob;
+		if (SUCCEEDED(wall->pNetFwPolicy2->get_ServiceRestriction(&sr->restriction))) {
+			out[0] = sr;
+		}
+		else {
+			delete sr;
+			out[0] = NULL;
+		}
+	}
+	void NET_WALL_API NET_WALL_CALL ReleaseServiceRestriction(net_wall_service_restriction* res) {
+		net_wall_service_restriction_win32* sr = (net_wall_service_restriction_win32*)res;
+		if (sr->restriction != NULL) {
+			sr->restriction->Release();
+			delete sr;
+		}
+	}
 
 
 	/*** Rule Based Method**************/

@@ -14,18 +14,22 @@
 #endif
 #define PERMISSION_ERROR_MSG "Admin permission not guranted/ Run In Admin mode"
 namespace net_wall{
-	enum class FWProfile {
+	enum  FWProfile :char {
 		__DOMAIN=0b001, __PUBLIC=0b010, __PRIVATE=0b100,__ALL=0b111
 	};
-	enum class FWAction {
+	enum  FWAction:char {
 		FWA_BLOCK,FWA_ALLOW,FWA_MAX
 	};
-	enum class Bound {
+	enum  Bound:char {
 		B_INBOUND=0b01,B_OUTBOUND=0b10,B_MAX=0b11
 	};
-	enum class Protocol {
+	enum Protocol:char {
 		TCP,UDP,ANY
 	};
+	enum FWModifyState:char {
+		OK,GP_OVERRIDE,IN_BLOCK
+	};
+
 	struct net_wall {};//implementation provided by platform
 	struct net_wall_rule {};//implementation provided by platform
 	struct net_wall_service_restriction {}; //implementation provided by win32 platform INetFwServiceRestriction
@@ -61,6 +65,7 @@ namespace net_wall{
 		
 		void NET_WALL_API NET_WALL_CALL GetRule(const char* name,net_wall*,net_wall_rule** out)noexcept(false);
 		void NET_WALL_API NET_WALL_CALL AddRule(net_wall*, net_wall_rule*)noexcept(false);
+		int NET_WALL_API NET_WALL_CALL GetRuleCount(net_wall*);
 		
 		void NET_WALL_API NET_WALL_CALL RemoveRule(net_wall*, const char*)noexcept(false);
 		void NET_WALL_API NET_WALL_CALL EnableGroupedRule(const char*, net_wall*, bool)noexcept(false);
@@ -73,6 +78,21 @@ namespace net_wall{
 		
 		void NET_WALL_API NET_WALL_CALL SetUnicastResponsesToMulticastBroadcastDisabled(net_wall*,bool)noexcept(false);
 		void NET_WALL_API NET_WALL_CALL RestoreDefaultSettings(net_wall*)noexcept(false);
+
+		FWModifyState NET_WALL_API NET_WALL_CALL LocalPolicyModifyState(net_wall*);
+		void NET_WALL_API NET_WALL_CALL GetServiceRestriction(net_wall*, net_wall_service_restriction**);
+		void NET_WALL_API NET_WALL_CALL ReleaseServiceRestriction(net_wall_service_restriction* res);
+
+		/*****ServiceRestriction Based Method*******/
+
+		void NET_WALL_API NET_WALL_CALL RestrictService(const char*, const char*, bool, bool)noexcept(false);
+		bool NET_WALL_API NET_WALL_CALL IsServiceRestricted(const char*, const char*);
+
+		void NET_WALL_API NET_WALL_CALL GetRule(const char*, net_wall_service_restriction*, net_wall_rule**);
+		void NET_WALL_API NET_WALL_CALL AddRule(net_wall_service_restriction*, net_wall_rule*)noexcept(false);
+		int NET_WALL_API NET_WALL_CALL GetRuleCount(net_wall_service_restriction*);
+
+
 		/** Rule Based Method********/
 		void NET_WALL_API NET_WALL_CALL InitializeRule(net_wall_rule**)noexcept(false);
 		

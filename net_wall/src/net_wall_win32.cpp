@@ -20,34 +20,39 @@ namespace net_wall {
 	
 	static LONG FWProfileMaskToNETFWPROFILE2MASK(FWProfile profilesTypeMask) {
 		LONG mask=0;
-		if (((profilesTypeMask << 7)>>7)==FWProfile::__DOMAIN) {
+		short msk = short(profilesTypeMask) & 0x00ff;
+		short f = (msk << 7) & 0x00ff;
+		short s = ((msk >> 1) << 7) & 0x00ff;
+		short t = ((msk >> 2) << 7) & 0x00ff;
+		if (f == 0x0080) {
 			mask |= NET_FW_PROFILE2_DOMAIN;
 		}
-		if (((profilesTypeMask << 6) >> 7) == FWProfile::__PUBLIC) {
+		if (s == 0x0080) {
 			mask |= NET_FW_PROFILE2_PUBLIC;
 		}
-		if (((profilesTypeMask << 5) >> 7) == FWProfile::__PRIVATE) {
-			mask |= NET_FW_PROFILE2_PUBLIC;
-		}
-		if (profilesTypeMask == 0b111) {
-			mask = NET_FW_PROFILE2_ALL;
+		if (t == 0x0080) {
+			mask |= NET_FW_PROFILE2_PRIVATE;
 		}
 		return mask;
 	}
 
-	static FWProfile NETFWPROFILE2MASKToFWProfile(LONG maskType) {
+	static FWProfile NETFWPROFILE2MASKToFWProfile(LONG masking) {
 		char mask = 0;
-		if (((maskType << 7) >> 7) == 0x1) {
-			mask |= char(FWProfile::__DOMAIN);
+		short maskType =short(masking)&0x00FF;
+		short f = (maskType << 7)&0x00ff;
+		short s = ((maskType >> 1) << 7)&0x00ff;
+		short t = ((maskType >> 2) << 7)&0x00ff;
+		if (f == 0x0080) {
+			mask |= (char)FWProfile::__DOMAIN;
 		}
-		if (((maskType << 6) >> 7) == 0x2) {
-			mask |= char(FWProfile::__PUBLIC);
+		if (s == 0x0080) {
+			mask |= (char)FWProfile::__PUBLIC;
 		}
-		if (((maskType << 5) >> 7) == 0x4) {
-			mask |= char(FWProfile::__PRIVATE);
+		if (t == 0x0080) {
+			mask |= (char)FWProfile::__PRIVATE;
 		}
-		if (maskType == NET_FW_PROFILE2_ALL) {
-			mask = (char)FWProfile::__ALL;
+		if (masking == (NET_FW_PROFILE2_ALL)) {
+			mask = FWProfile::__ALL;
 		}
 		return FWProfile(mask);
 	}
@@ -572,6 +577,23 @@ namespace net_wall {
 	void NET_WALL_API NET_WALL_CALL SetBound(net_wall_rule* rule, Bound bound)noexcept(false) {
 		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
 		if (SUCCEEDED(win32fwrule->rule->put_Direction(NETFWRULEDIRECTIONFromBound(bound)))) {
+			return;
+		}
+		throw permission_denied();
+	}
+
+	FWProfile NET_WALL_API NET_WALL_CALL GetProfile(net_wall_rule* rule) {
+		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
+		long profile;
+		if (SUCCEEDED(win32fwrule->rule->get_Profiles(&profile))) {
+			return NETFWPROFILE2MASKToFWProfile(profile);
+		}
+		return FWProfile(-1);
+	}
+	void NET_WALL_API NET_WALL_CALL SetProfile(net_wall_rule* rule, char mask)noexcept(false) {
+		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
+		LONG profileMask = FWProfileMaskToNETFWPROFILE2MASK(FWProfile(mask));
+		if (SUCCEEDED(win32fwrule->rule->put_Profiles(profileMask))) {
 			return;
 		}
 		throw permission_denied();

@@ -3,25 +3,17 @@
 #include <net_wall.h>
 int main()
 {
-    net_wall::net_wall* wall;
-    net_wall::net_wall_rule* rule;
-    std::cout << (net_wall::Init()==true?"Success":"Oops")<<std::endl;
+    net_wall::net_wall* wall=NULL;
+    net_wall::net_wall_rule* rule=NULL;
     try {
+        std::cout << (net_wall::Init() == true ? "Success" : throw net_wall::permission_denied("COM Initialization failed")) << std::endl;
         net_wall::Initialize(&wall, net_wall::FWProfile::__PUBLIC);
-        net_wall::GetRule("Shell", wall, &rule);
-        if (net_wall::GetProtocol(rule) == net_wall::Protocol::ANY || net_wall::GetProtocol(rule) == net_wall::Protocol::TCP) {
-            net_wall::SetProtocol(rule, net_wall::Protocol::UDP);
-        }
-        else {
-            net_wall::SetProtocol(rule, net_wall::Protocol::TCP);
-        }
-        if (net_wall::GetBound(rule) == net_wall::Bound::B_MAX || net_wall::GetBound(rule) == net_wall::Bound::B_INBOUND) {
-            net_wall::SetBound(rule, net_wall::Bound::B_OUTBOUND);
-        }
-        else {
-            net_wall::SetBound(rule, net_wall::Bound::B_INBOUND);
-        }
-
+        net_wall::GetRule("QLang", wall, &rule);
+        net_wall::FWProfile profiles = net_wall::GetProfile(rule);
+        std::cout << (short)profiles << std::endl;
+        std::cout << (profiles == (net_wall::__PUBLIC | net_wall::__PRIVATE |net_wall::__DOMAIN)) << std::endl;
+        net_wall::SetProfile(rule, net_wall::FWProfile(net_wall::__PUBLIC|net_wall::__PRIVATE|net_wall::__DOMAIN));
+        net_wall::Cleanup(rule);
         net_wall::Cleanup(wall);
     }
     catch (net_wall::permission_denied& pm) {

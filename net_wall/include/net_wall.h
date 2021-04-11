@@ -15,7 +15,7 @@
 #define PERMISSION_ERROR_MSG "Admin permission not guranted/ Run In Admin mode"
 namespace net_wall{
 	enum  FWProfile :char {
-		__DOMAIN=0b001, __PUBLIC=0b010, __PRIVATE=0b100,__ALL=0b111
+		__DOMAIN=1, __PUBLIC=2, __PRIVATE=4,__ALL=7
 	};
 	enum  FWAction:char {
 		FWA_BLOCK,FWA_ALLOW,FWA_MAX
@@ -117,7 +117,9 @@ namespace net_wall{
 
 		Bound NET_WALL_API NET_WALL_CALL GetBound(net_wall_rule*);
 		void NET_WALL_API NET_WALL_CALL SetBound(net_wall_rule*, Bound)noexcept(false);
-
+		
+		FWProfile NET_WALL_API NET_WALL_CALL GetProfile(net_wall_rule*);
+		void NET_WALL_API NET_WALL_CALL SetProfile(net_wall_rule*, char)noexcept(false);
 #endif
 	}
 }

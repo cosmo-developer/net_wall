@@ -15,11 +15,11 @@ namespace net_wall {
 	};//net_wall_rule_win32 uses windows firewall rule system
 
 	struct net_wall_service_restriction_win32 :public net_wall_service_restriction {
-		INetFwServiceRestriction* restriction=NULL;
+		INetFwServiceRestriction* restriction = NULL;
 	};
-	
+
 	static LONG FWProfileMaskToNETFWPROFILE2MASK(FWProfile profilesTypeMask) {
-		LONG mask=0;
+		LONG mask = 0;
 		short msk = short(profilesTypeMask) & 0x00ff;
 		short f = (msk << 7) & 0x00ff;
 		short s = ((msk >> 1) << 7) & 0x00ff;
@@ -38,10 +38,10 @@ namespace net_wall {
 
 	static FWProfile NETFWPROFILE2MASKToFWProfile(LONG masking) {
 		char mask = 0;
-		short maskType =short(masking)&0x00FF;
-		short f = (maskType << 7)&0x00ff;
-		short s = ((maskType >> 1) << 7)&0x00ff;
-		short t = ((maskType >> 2) << 7)&0x00ff;
+		short maskType = short(masking) & 0x00FF;
+		short f = (maskType << 7) & 0x00ff;
+		short s = ((maskType >> 1) << 7) & 0x00ff;
+		short t = ((maskType >> 2) << 7) & 0x00ff;
 		if (f == 0x0080) {
 			mask |= (char)FWProfile::__DOMAIN;
 		}
@@ -177,7 +177,7 @@ namespace net_wall {
 
 
 	bool NET_WALL_API NET_WALL_CALL Init() {
-		HRESULT hrComInit=S_FALSE;
+		HRESULT hrComInit = S_FALSE;
 		hrComInit = CoInitializeEx(0, COINIT_MULTITHREADED);
 		if (hrComInit != RPC_E_CHANGED_MODE) {
 			if (FAILED(hrComInit)) {
@@ -317,7 +317,7 @@ namespace net_wall {
 		throw permission_denied();
 	}
 
-		
+
 
 	void NET_WALL_API NET_WALL_CALL AddRule(net_wall* wall_glob, net_wall_rule* rl)noexcept(false) {
 		net_wall_win32* wall = (net_wall_win32*)wall_glob;
@@ -369,7 +369,7 @@ namespace net_wall {
 		net_wall_win32* wall = (net_wall_win32*)wall_glob;
 		BSTR groupName = _com_util::ConvertStringToBSTR(name);
 		VARIANT_BOOL enabled = 0;
-		if (SUCCEEDED(wall->pNetFwPolicy2->IsRuleGroupEnabled(NETFWPROFILETYPE2FromFWProfile(wall->profile),groupName,&enabled))) {
+		if (SUCCEEDED(wall->pNetFwPolicy2->IsRuleGroupEnabled(NETFWPROFILETYPE2FromFWProfile(wall->profile), groupName, &enabled))) {
 			SysFreeString(groupName);
 			return enabled == -1 ? true : false;
 		}
@@ -378,7 +378,7 @@ namespace net_wall {
 	}
 
 	bool NET_WALL_API NET_WALL_CALL IsNotificationDisabled(net_wall* wall_glob) {
-		VARIANT_BOOL disabled =0;
+		VARIANT_BOOL disabled = 0;
 		net_wall_win32* wall = (net_wall_win32*)wall_glob;
 		if (SUCCEEDED(wall->pNetFwPolicy2->get_NotificationsDisabled(NETFWPROFILETYPE2FromFWProfile(wall->profile), &disabled))) {
 			return disabled == -1 ? true : false;
@@ -404,7 +404,7 @@ namespace net_wall {
 
 	void NET_WALL_API NET_WALL_CALL SetUnicastResponsesToMulticastBroadcastDisabled(net_wall* wall_glob, bool disabled)noexcept(false) {
 		net_wall_win32* wall = (net_wall_win32*)wall_glob;
-		if (SUCCEEDED(wall->pNetFwPolicy2->put_UnicastResponsesToMulticastBroadcastDisabled(NETFWPROFILETYPE2FromFWProfile(wall->profile),disabled==true?-1:0))) {
+		if (SUCCEEDED(wall->pNetFwPolicy2->put_UnicastResponsesToMulticastBroadcastDisabled(NETFWPROFILETYPE2FromFWProfile(wall->profile), disabled == true ? -1 : 0))) {
 			return;
 		}
 		throw permission_denied();
@@ -446,80 +446,6 @@ namespace net_wall {
 		}
 	}
 
-	void NET_WALL_API NET_WALL_CALL RestrictService(
-		net_wall_service_restriction* res, const char* serviceName,
-		const char* appName, bool restrictService, bool serviceSidrestricted)noexcept(false) {
-		net_wall_service_restriction_win32* sr = (net_wall_service_restriction_win32*)res;
-		BSTR sname = _com_util::ConvertStringToBSTR(serviceName);
-		BSTR aname = _com_util::ConvertStringToBSTR(appName);
-		if (SUCCEEDED(sr->restriction->RestrictService(sname, aname, restrictService == true ? -1 : 0, serviceSidrestricted == true ? -1 : 0))) {
-			SysFreeString(sname);
-			SysFreeString(aname);
-			return;
-		}
-		SysFreeString(sname);
-		SysFreeString(aname);
-		throw permission_denied();
-	}
-	bool NET_WALL_API NET_WALL_CALL IsServiceRestricted(net_wall_service_restriction* res, const char* serviceName, const char* appName) {
-		net_wall_service_restriction_win32* sr = (net_wall_service_restriction_win32*)res;
-		BSTR sname = _com_util::ConvertStringToBSTR(serviceName);
-		BSTR aname = _com_util::ConvertStringToBSTR(appName);
-		VARIANT_BOOL restricted = 0;
-		if (SUCCEEDED(sr->restriction->ServiceRestricted(sname, aname, &restricted))) {
-			SysFreeString(sname);
-			SysFreeString(aname);
-			return restricted == -1 ? true : false;
-		}
-		SysFreeString(sname);
-		SysFreeString(aname);
-		throw permission_denied();
-	}
-
-	void NET_WALL_API NET_WALL_CALL GetRule(net_wall_service_restriction* res, const char* ruleName, net_wall_rule** out) {
-		net_wall_service_restriction_win32* sr = (net_wall_service_restriction_win32*)res;
-		BSTR rulename = _com_util::ConvertStringToBSTR(ruleName);
-		net_wall_rule_win32* dout = new net_wall_rule_win32;
-		INetFwRules* rules;
-		if (SUCCEEDED(sr->restriction->get_Rules(&rules))) {
-			if (SUCCEEDED(rules->Item(rulename,&dout->rule))) {
-				out[0] = dout;
-			}
-			else {
-				out[0] = NULL;
-			}
-		}
-		rules->Release();
-		SysFreeString(rulename);
-	}
-
-	void NET_WALL_API NET_WALL_CALL AddRule(net_wall_service_restriction* res, net_wall_rule* rule)noexcept(false) {
-		net_wall_service_restriction_win32* sr = (net_wall_service_restriction_win32*)res;
-		net_wall_rule_win32* nwrw32 =(net_wall_rule_win32*) rule;
-		INetFwRules* rules;
-		bool flag2=false;
-		bool flag = false;
-		if (SUCCEEDED(sr->restriction->get_Rules(&rules))) {
-			flag2 = true;
-			if (SUCCEEDED(rules->Add(nwrw32->rule))) {
-				flag = true;
-			}
-		}
-		if (flag2)rules->Release();
-		
-		if (flag == false) throw permission_denied();
-	}
-	int NET_WALL_API NET_WALL_CALL GetRuleCount(net_wall_service_restriction* res) {
-		net_wall_service_restriction_win32* sr = (net_wall_service_restriction_win32*)res;
-		INetFwRules* rules;
-		bool flag = false;
-		long n = 0;
-		if (SUCCEEDED(sr->restriction->get_Rules(&rules))) {
-			flag = true;
-			if (SUCCEEDED(rules->get_Count(&n))) { rules->Release();return n; }
-		}
-		return -1;
-	}
 
 	/*** Rule Based Method**************/
 	void NET_WALL_API NET_WALL_CALL InitializeRule(net_wall_rule** rule) {
@@ -544,11 +470,11 @@ namespace net_wall {
 		delete win32fwrule;
 	}
 
-	void NET_WALL_API NET_WALL_CALL GroupOfRule(net_wall_rule* rule,char** out) {
+	void NET_WALL_API NET_WALL_CALL GroupOfRule(net_wall_rule* rule, char** out) {
 		BSTR ruleName;
 		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
 		if (SUCCEEDED(win32fwrule->rule->get_Grouping(&ruleName))) {
-			out[0]=_com_util::ConvertBSTRToString(ruleName);
+			out[0] = _com_util::ConvertBSTRToString(ruleName);
 		}
 	}
 
@@ -559,9 +485,9 @@ namespace net_wall {
 			out[0] = _com_util::ConvertBSTRToString(name);
 			return;
 		}
-	}													  
+	}
 	void NET_WALL_API NET_WALL_CALL SetName(net_wall_rule* rule, const char* name)noexcept(false) {
-		BSTR rulename=_com_util::ConvertStringToBSTR(name);
+		BSTR rulename = _com_util::ConvertStringToBSTR(name);
 		net_wall_rule_win32* win32fwrule = (net_wall_rule_win32*)rule;
 		if (SUCCEEDED(win32fwrule->rule->put_Name(rulename))) {
 			SysFreeString(rulename);//In alpha mode
@@ -674,6 +600,6 @@ namespace net_wall {
 	}
 
 #endif
-	
+
 #endif // WIN32
 }

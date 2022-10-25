@@ -18,15 +18,9 @@
     <ClInclude Include="include\net_wall.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\netmanager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\net_wall_win32.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\netmanager_win32.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

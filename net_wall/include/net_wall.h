@@ -85,10 +85,10 @@ namespace net_wall{
 
 		/*****ServiceRestriction Based Method*******/
 
-		void NET_WALL_API NET_WALL_CALL RestrictService(const char*, const char*, bool, bool)noexcept(false);
-		bool NET_WALL_API NET_WALL_CALL IsServiceRestricted(const char*, const char*);
+		void NET_WALL_API NET_WALL_CALL RestrictService(net_wall_service_restriction*,const char*, const char*, bool, bool)noexcept(false);
+		bool NET_WALL_API NET_WALL_CALL IsServiceRestricted(net_wall_service_restriction* ,const char*, const char*);
 
-		void NET_WALL_API NET_WALL_CALL GetRule(const char*, net_wall_service_restriction*, net_wall_rule**);
+		void NET_WALL_API NET_WALL_CALL GetRule(net_wall_service_restriction*, const char*, net_wall_rule**);
 		void NET_WALL_API NET_WALL_CALL AddRule(net_wall_service_restriction*, net_wall_rule*)noexcept(false);
 		int NET_WALL_API NET_WALL_CALL GetRuleCount(net_wall_service_restriction*);
 
